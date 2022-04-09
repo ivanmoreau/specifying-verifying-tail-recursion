@@ -1,0 +1,500 @@
+% vim: set tw=89 spell :
+\documentclass[runningheads]{llncs}
+
+\usepackage[T1]{fontenc}
+\usepackage{listings}
+\usepackage{graphicx}
+\usepackage{lmodern}
+\usepackage{colonequals}
+\usepackage{amsmath}
+
+\lstset{
+  basicstyle=\ttfamily,
+  extendedchars=true,
+  literate=
+    {∷}{{ $\coloncolon$ }}1 {→}{{ $\rightarrow$ }}1
+    {ℕ}{{ $\mathbb{N}$ }}1 {≡}{{ $\equiv$ }}1
+    {∀}{{ $\forall$ }}1 {λ}{{$\lambda$}}1
+    {ˡ}{{ $\textsuperscript{l}$ }}1
+    {ʳ}{{ $\textsuperscript{r}$ }}1
+    ,
+  inputencoding=utf8,
+  captionpos=b,
+}
+
+\begin{document}
+
+\title{Specifying and verifying a transformation of recursive functions into
+       tail-recursive functions}
+
+\author{ Axel Suárez Polo\orcidID{0000-0002-8233-3751} \and \\
+         José de Jesús Lavalle Martínez\orcidID{0000-0001-8652-3889} \and \\
+         Iván Molina Rebolledo\orcidID{0000-0002-2224-7026}
+    }
+
+\authorrunning{A. Suárez et al.}
+
+\institute{ Benemérita Universidad Autónoma de Puebla,\\
+  Puebla, Puebla 72000, México}
+
+\maketitle
+
+\begin{abstract}
+
+It is well known that some recursive functions admit a tail recursive counterpart which
+have a more efficient time-complexity behavior. This paper presents a formal
+specification and verification of such process. A monoid is used to generate a recursive
+function and its tail-recursive counterpart. Also, the monoid properties are used to
+prove extensional equality of both functions. In order to achieve this goal, the Agda
+programming language and proof assistant is used to generate a parametrized module with a
+monoid, via dependent types. This technique is exemplified with the length, reverse, and
+indices functions over lists.
+
+\keywords{    Dependent Types
+         \and Formal Specification and Verification
+         \and Tail Recursion
+         \and Accumulation
+         \and Program Transformation
+         }
+\end{abstract}
+
+\section{Introduction}
+
+Dependently typed programming languages provide an expressive system that allows both
+programming and theorem proving. Agda is an implementation of such a language
+\cite{bove2009brief}. Using these programming languages, it can be proven that two
+functions return the same output when they receive the same input, which is a property
+known as \emph{extensional equality} \cite{botta2021extensional}.
+
+Programs can be developed using a transformational approach, where an initial program
+whose correctness is easy to verify is written, and after that, it is transformed into a
+more efficient program that preserves the same properties and semantics
+\cite{pettorossi1993rules}. Proving that the transformed program works the same way as
+the original program is usually done by using \emph{algebraic reasoning}
+\cite{bird1996algebra}, but this can also be done using dependently typed programming
+\cite{mu2008algebra}, with the advantage of the proof being verified by the compiler.
+
+The \emph{accumulation} strategy is a well-known program transformation technique to
+improve the efficiency of recursive functions \cite{bird1984promotion}. This technique is
+the focus of this paper, in which dependently typed programming is used to develop an
+strategy to prove extensional equality between the original recursive programs and their
+tail-recursive counterparts.
+
+\section{A simple example: list length}
+
+Let's start with a simple example: a function to compute the length of a list. This
+function can be defined recursively as follows:
+
+\lstinputlisting[firstline=8, lastline=10]{code/Length.agda}
+
+Nonetheless, this function requires space proportional to the length of the list. For
+this reason, this program can be transformed into a tail-recursive function, which can be
+optimized automatically by the compiler to use constant space
+\cite{bauer2003compilation}. The transformed function is shown below:
+
+\lstinputlisting[firstline=12, lastline=14]{code/Length.agda}
+
+In this example, it is clear to see that for any list, both functions return the same
+result, but this is a fact that is not encoded in Agda itself. However, we can encode
+this fact in Agda using dependent function types and intensional equality:
+
+\lstinputlisting[firstline=34, lastline=35]{code/Length.agda}
+
+As we can see, the use of dependent types allows us to make reference to the first
+argument in the return type of the function, and therefore, allowing us to state the fact
+that both functions return the same result when called with the same list. The notion of
+``sameness'' used here is the one of \emph{intensional equality}, which is an inductively
+defined family of types \cite{dybjer1994inductive,mu2008algebra} defined as follows:
+
+\begin{lstlisting}
+data _≡_ {a} {A : Set a} (x : A) : A → Set a where
+  instance refl : x ≡ x
+\end{lstlisting}
+
+What this means is that two terms are equal if they are exactly the same term.
+Additionally, in Agda, if both terms reduce to the same term, we can state that they are
+intensionally equal \cite{botta2021extensional}. For example, \lstinline{refl : 2 + 3 ≡
+5}.
+
+Returning to the example of the list length, we need to implement a function with that
+signature, which we can do by pattern matching on the input list:
+
+\begin{lstlisting}
+length≡length-tail : ∀ (xs : List A)
+                   → length xs ≡ length-tail xs 0
+length≡length-tail [] = ?
+length≡length-tail (x ∷ xs) = ?
+\end{lstlisting}
+
+We can proceed our proof by filling each of the holes\footnote{The \lstinline{?} symbols
+are holes in our proof, which must be filled later to complete the proof, but are useful
+to write the proof incrementally.}. The first case is trivial, because both function
+calls reduce to to the same term:
+
+\begin{align*}
+  \lstinline{length []} &= \lstinline{0} & \text{(by definition)} \\
+  \lstinline{length-tail [] 0} &= \lstinline{0} \\
+\end{align*}
+
+Therefore, we can fill the first hole with \lstinline{refl}:
+
+\begin{center}
+\begin{tabular}{c}
+\begin{lstlisting}
+length≡length-tail [] = refl
+\end{lstlisting}
+\end{tabular}
+\end{center}
+
+For the inductive case, we can reduce both terms instantiated with the argument, and
+check what is necessary to prove. Note that this can be done automatically by querying
+Agda and it's particularly useful when using the Agda mode in Emacs
+\cite{wadler2018programming}. The reductions are shown below:
+
+\begin{align*}
+  \lstinline{length (x∷xs)} &= \lstinline{suc (length xs)} \\
+  \lstinline{length-tail (x∷xs) 0} &= \lstinline{length-tail xs (suc 0)} \\
+                                   &= \lstinline{length-tail xs 1} \\
+\end{align*}
+
+We need to prove that \lstinline{suc (length xs)≡length-tail xs 1}. This time, we cannot
+simply use \lstinline{refl}, because both sides do not reduce to the same term. For this
+reason, we can proceed to call this function recursively with the tail of the list. This
+is justified because of the Curry-Howard correspondence, and the fact that we are making
+a proof by induction. The result of the recursive call gives us the induction hypothesis:
+
+\begin{lstlisting}
+length≡length-tail (x ∷ xs) =
+  let ind-h = length≡length-tail xs
+   in ?
+\end{lstlisting}
+
+The type of \lstinline{ind-h} is \lstinline{length xs≡length-tail xs 0}. The left sides
+of the induction hypothesis and what we are proving are almost the same. To make them
+match, we can apply the \emph{congruence} property of equality, which has the following
+type:
+
+\begin{lstlisting}
+cong : ∀ (f : A → B) {x y} → x ≡ y → f x ≡ f y
+\end{lstlisting}
+
+Applying this function to the induction hypothesis, we get the function below:
+
+\begin{lstlisting}
+length≡length-tail (x ∷ xs) =
+  let ind-h = length≡length-tail xs
+      suc-cong = cong suc ind-h
+   in ?
+\end{lstlisting}
+
+The new term \lstinline{suc-cong} has the type:
+
+\begin{center}
+\begin{tabular}{c}
+\begin{lstlisting}
+suc (length xs) ≡ suc (length-tail xs 0)
+\end{lstlisting}
+\end{tabular}
+\end{center}
+
+The proof can be completed by making use of \lstinline{transitivity}, which is
+represented using dependent types as follows:
+
+\begin{center}
+\begin{tabular}{c}
+\begin{lstlisting}
+trans : ∀ {x y z} → x ≡ y → y ≡ z → x ≡ z
+\end{lstlisting}
+\end{tabular}
+\end{center}
+
+Therefore, now our proof is:
+
+\begin{lstlisting}
+length≡length-tail (x ∷ xs) =
+  let ind-h = length≡length-tail xs
+      suc-cong = cong suc ind-h
+   in trans suc-cong ?
+\end{lstlisting}
+
+The type of the term required to fill the hole is:
+
+\begin{center}
+\begin{tabular}{c}
+\begin{lstlisting}
+suc (length-tail xs 0) ≡ length-tail xs 1
+\end{lstlisting}
+\end{tabular}
+\end{center}
+
+We need to ``pull'' the \lstinline{1} from the accumulator somehow, and convert it to a
+\lstinline{suc} call. We can extract this new goal into a helper function:
+
+\lstinputlisting[firstline=30, lastline=31]{code/Length.agda}
+
+We can try to prove this goal by straightforward induction over the list, but we reach a
+dead end:
+
+\begin{lstlisting}
+length-pull [] = refl
+length-pull (x ∷ xs) = ?
+\end{lstlisting}
+
+The base case is trivial, following the definitions of the function, both terms reduce to
+\lstinline{1}. The problem is the inductive case, which reduces as follows:
+
+\begin{align*}
+  \lstinline{suc (length-tail (x∷xs) 0)} &= \lstinline{suc (length-tail xs (suc 0))} \\
+                                         &= \lstinline{suc (length-tail xs 1)} \\
+  \lstinline{length-tail (x∷xs) 1} &= \lstinline{length-tail xs (suc 1)} \\
+                                   &= \lstinline{length-tail xs 2} \\
+\end{align*}
+
+So, we are left with the following goal, which is very similar to the one we started
+with:
+
+\begin{center}
+\begin{tabular}{c}
+\begin{lstlisting}
+suc (length-tail xs 1) ≡ length-tail xs 2
+\end{lstlisting}
+\end{tabular}
+\end{center}
+
+We could try to prove this proposition by straightforward induction too, but that would
+require us to prove the proposition for the next values \lstinline{2} and \lstinline{3},
+and so on, \emph{ad infinitum}.
+
+To solve this issue, we can use a \emph{generalization} strategy to prove this inductive
+property \cite{abdali1984generalization}. The generalized property will allows us to
+vary the value of the accumulator in the different cases of the inductive proof, but we
+will need to introduce another variable for it. It is important to note that after
+processing the first \lstinline{n} items of the list, we will get
+\lstinline{n + length-tail xs 0} on the left side and \lstinline{length-tail xs n} on the
+right one. Combining the generalization strategy and this fact, we can see that the
+property we have to prove is:
+
+\lstinputlisting[firstline=22, lastline=24]{code/Length.agda}
+
+This function can be proved by induction over the list:
+
+\begin{lstlisting}
+length-pull-generalized [] n p = refl
+length-pull-generalized (x ∷ xs) n p = ?
+\end{lstlisting}
+
+The base case is trivial, because replacing the \lstinline{xs} argument with
+\lstinline{[]}, and following a single reduction step on both sides, a common term
+\lstinline{n + p} is reached.
+
+The inductive case is more interesting, reducing both sides of the equation proceeds as
+follows:
+
+\begin{align*}
+  \lstinline{n + length-tail (x∷xs) p} &= \lstinline{n + length-tail xs (suc p)} \\
+  \lstinline{length-tail (x∷xs) (n + p)} &= \lstinline{length-tail xs (suc (n + p))}
+\end{align*}
+
+We can see that we have pretty much the induction hypothesis, with the only difference
+being the accumulating parameter \lstinline{p}. Fortunately, as we have generalized the
+proposition, we can pick a value for \lstinline{p} when using the induction
+hypothesis:
+
+\begin{lstlisting}
+length-pull-generalized (x ∷ xs) n p =
+  length-pull-generalized xs n (suc p)
+\end{lstlisting}
+
+This takes us closer to the goal we want to prove. Unfortunately, we are left with the
+following type after performing the substitution of \lstinline{p} with \lstinline{suc p}:
+
+\begin{lstlisting}
+n + length-tail xs (suc p) ≡ length-tail xs (n + suc p)
+\end{lstlisting}
+
+This is almost what we want, with the exception of \lstinline{suc (n + p)} not being
+equal to \lstinline{n + suc p}. However, these two terms are indeed equal, but not
+definitionally, because the plus function is defined by induction on the first argument,
+and not on the second one:
+
+\begin{lstlisting}
+_+_ : Nat → Nat → Nat
+zero  + m = m
+suc n + m = suc (n + m)
+\end{lstlisting}
+
+Therefore, applying reduction steps does not allow Agda to deduce the equality of these
+two terms. Fortunately, the fact that these terms are equal can be easily proved
+inductively as follows:
+
+\begin{lstlisting}
++-suc : ∀ m n → m + suc n ≡ suc (m + n)
++-suc zero    n = refl
++-suc (suc m) n = cong suc (+-suc m n)
+\end{lstlisting}
+
+The remaining step is to ``replace'' the \lstinline{suc (n + p)} term with
+\lstinline{n + suc p}. This could be done by using a function generalizing over the
+accumulator, but Agda provides the \lstinline{rewrite} construct, that gives us that
+functionality with minimal effort:
+
+\lstinputlisting[firstline=26, lastline=28]{code/Length.agda}
+
+We make use of the \emph{symmetric} property of equality in the rewriting step, which
+allows us to flip the sides of the equality:
+
+\begin{center}
+\begin{tabular}{c}
+\begin{lstlisting}
+sym : ∀ {x y} → x ≡ y → y ≡ x
+\end{lstlisting}
+\end{tabular}
+\end{center}
+
+With all this in place, we can finally prove the remaining goals, giving as a result the
+complete proof:
+
+\lstinputlisting[firstline=22, lastline=41]{code/Length.agda}
+
+\section{Another example: list reverse}
+
+The list reversal function follows a similar pattern to the one we have seen before:
+
+\lstinputlisting[firstline=7, lastline=13]{code/Rev.agda}
+
+It should not come as a surprise that the equality proof is very similar too:
+
+\lstinputlisting[firstline=17, lastline=39]{code/Rev.agda}
+
+There are minor variations in the function signatures and the order of the parameters,
+but the structure is identical:
+
+\begin{itemize}
+  \item Start proving by induction on the list.
+  \item Fill the base case with \lstinline{refl}.
+  \item Take the induction hypothesis by using a recursive call.
+  \item Apply \emph{an operator} to both sides of the equality, using \lstinline{cong}.
+  \item Create a function to pull the accumulator, and prove it using a generalized
+        version of this function that allows varying the accumulator.
+  \item Compose the two equalities using the \lstinline{trans} function.
+\end{itemize}
+
+\section{Generalization}
+
+Starting from the function definitions, we can see that they follow the same recursive
+pattern, we can write this pattern in Agda, which is just an specialization of a
+\lstinline{fold} function \cite{hutton1999tutorial,meijer1991functional}:
+
+\lstinputlisting[firstline=15, lastline=17]{code/GenericBasic.agda}
+
+\begin{itemize}
+  \item \lstinline{R} is the result type of the function.
+  \item \lstinline{empty} is the term to return when the list is empty.
+  \item \lstinline{f} is a function to transform each element of the list into the result
+        type.
+  \item \lstinline{<>} is the function to combine the current item and the recursive
+        result.
+\end{itemize}
+
+In the case of the \lstinline{length} function, the result type is \mathbb{N}, the
+natural numbers; \lstinline{empty} is \lstinline{0}; the function to transform each
+element is a constant function that ignores its argument and returns \lstinline{1}; and
+the function to combine the current item and the result of the recursive call is the
+addition function.
+
+For the \lstinline{reverse} function, the result type is the same as the same list type
+as the input \lstinline{List A}; \lstinline{empty} is the empty list; the function to
+transform each element creates just a singleton list from its parameter; and the function
+to combine the current transformed item and the result of the recursive call, is the
+flipped concatenation function. The flipping is necessary to make the function
+concatenate its first argument to the right:
+
+\begin{align*}
+  \lstinline{reduce (x∷xs)} &= \lstinline{(λa→a∷[]) x <> reduce xs} \\
+                            &= \lstinline{(x∷[]) <> reduce xs} \\
+                            &= \lstinline{(λxs ys→ys ++ xs) (x∷[]) (reduce xs)} \\
+                            &= \lstinline{reduce xs ++ (x∷[])} \\
+\end{align*}
+
+The functions that follow this pattern can be defined in a tail-recursive way as follows:
+
+\lstinputlisting[firstline=19, lastline=21]{code/GenericBasic.agda}
+
+We can check manually that this function matches the tail-recursive definition in the
+case of the \lstinline{reverse} function:
+
+\begin{align*}
+  \lstinline{reduce-tail (x∷xs) r}
+    &= \lstinline{reduce-tail xs (r <> (λa→a∷[]) x)} \\
+    &= \lstinline{reduce-tail xs (r <> (x∷[])} \\
+    &= \lstinline{... xs ((λxs ys→ys ++ xs) r (x∷[]))} \\
+    &= \lstinline{reduce-tail xs ((x∷[]) ++ r)} \\
+    &= \lstinline{reduce-tail xs (x∷r)} \\
+\end{align*}
+
+Now we can proceed to prove that these two functions are extensionally equal in the
+general case. The proof follows almost same pattern as the one for the \lstinline{length}
+function:
+
+\lstinputlisting[firstline=43, lastline=50]{code/GenericBasic.agda}
+
+We make use of a piece of syntactic sugar called \emph{sections}, which allows us to
+write the function \lstinline{(λr→f x <> r)} as \lstinline{(f x <>_)}. Apart from that,
+the proof is identical to the ones we have seen before.
+
+However, to prove the accumulator pulling function, we need to use a different strategy.
+We are required to prove that:
+
+\lstinputlisting[firstline=31, lastline=34]{code/GenericBasic.agda}
+
+We can prove this proposition by induction over the list, which requires us to prove the
+proposition when \lstinline{xs} is \lstinline{[]}:
+
+\begin{align*}
+  \lstinline{r <> reduce-tail [] empty} &= \lstinline{r <> empty} \\
+  \lstinline{reduce-tail [] (empty <> r)} &= \lstinline{empty <> r} \\
+\end{align*}
+
+So we are required to prove that \lstinline{r <> empty≡empty <> r}. We could require
+the \lstinline{<>} to be commutative, but we can ``ask for less'' by just requiring
+\lstinline{empty} to be a left and right identity for \lstinline{<>}, this is expressed
+in Agda as:
+
+\begin{center}
+\begin{tabular}{c}
+\begin{lstlisting}
+<>-identityˡ : ∀ (r : R) → empty <> r ≡ r
+<>-identityʳ : ∀ (r : R) → r <> empty ≡ r
+\end{lstlisting}
+\end{tabular}
+\end{center}
+
+This way, we can use those identities to rewrite our goals, and make them match over the
+term \lstinline{r}, and then, using the trivial equality proof \lstinline{refl}:
+
+\lstinputlisting[firstline=35, lastline=37]{code/GenericBasic.agda}
+
+The inductive case goal is:
+
+\begin{align*}
+  \lstinline{r <}&\lstinline{> reduce-tail (x∷xs) empty} \\
+    &= \lstinline{r <> reduce-tail xs (empty <> f x)} \\
+  \lstinline{red}&\lstinline{uce-tail (x∷xs) (empty <> r)} \\
+    &= \lstinline{reduce-tail xs ((empty <> r) <> f x)} \\
+\end{align*}
+
+Which cannot be proven directly by straightforward induction, as we have seen before, but
+at least we can simplify it by using the left identity property over
+\lstinline{empty <> f x} and then over \lstinline{empty <> r}:
+
+\section{Conclusions}
+
+\subsubsection{Acknowledgements} Please place your acknowledgments at
+the end of the paper, preceded by an unnumbered run-in heading (i.e.
+3rd-level heading).
+
+
+\bibliographystyle{splncs04}
+\bibliography{refs}
+\end{thebibliography}
+\end{document}
