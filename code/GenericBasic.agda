@@ -7,8 +7,8 @@ module GenericBasic
   {A : Set}
   {R : Set}
   (f : A → R)
-  (empty : R)
   (_<>_ : R → R → R)
+  (empty : R)
   (m : IsMonoid _≡_ _<>_ empty)
   where
 

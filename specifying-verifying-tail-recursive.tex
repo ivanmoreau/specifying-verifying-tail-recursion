@@ -17,6 +17,8 @@
     {∀}{{ $\forall$ }}1 {λ}{{$\lambda$}}1
     {ˡ}{{ $\textsuperscript{l}$ }}1
     {ʳ}{{ $\textsuperscript{r}$ }}1
+    {∙}{{ $\cdot$ }}1
+    {₂}{{ $\textsubscript{2}$ }}1
     ,
   inputencoding=utf8,
   captionpos=b,
@@ -544,6 +546,18 @@ standard library definition of a monoid:
 
 \section{Examples}
 
+With the module in place, we can start using it to derive the recursive function, the
+tail-recursive counterpart and the proof that both functions are extensionally equal.
+
+The length function uses the usual sum monoid over the natural numbers:
+
+\lstinputlisting[firstline=5, lastline=10]{code/Instances.agda}
+
+The reverse function requires us to create an instance of a flipped monoid for
+\lstinline{++}, which can be done with the already defined properties for list
+concatenation.
+
+\lstinputlisting[firstline=21, lastline=41]{code/Instances.agda}
 
 \section{Conclusions}
 
