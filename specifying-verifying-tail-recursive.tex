@@ -385,7 +385,7 @@ Starting from the function definitions, we can see that they follow the same rec
 pattern, we can write this pattern in Agda, which is just an specialization of a
 \lstinline{fold} function \cite{hutton1999tutorial,meijer1991functional}:
 
-\lstinputlisting[firstline=15, lastline=17]{code/GenericBasic.agda}
+\lstinputlisting[firstline=21, lastline=23]{code/GenericBasic.agda}
 
 \begin{itemize}
   \item \lstinline{R} is the result type of the function.
@@ -402,8 +402,8 @@ element is a constant function that ignores its argument and returns \lstinline{
 the function to combine the current item and the result of the recursive call is the
 addition function.
 
-For the \lstinline{reverse} function, the result type is the same as the same list type
-as the input \lstinline{List A}; \lstinline{empty} is the empty list; the function to
+For the \lstinline{reverse} function, the result type is the same type as the original
+list, \lstinline{List A}; \lstinline{empty} is the empty list; the function to
 transform each element creates just a singleton list from its parameter; and the function
 to combine the current transformed item and the result of the recursive call, is the
 flipped concatenation function. The flipping is necessary to make the function
@@ -416,9 +416,10 @@ concatenate its first argument to the right:
                             &= \lstinline{reduce xs ++ (x∷[])} \\
 \end{align*}
 
-The functions that follow this pattern can be defined in a tail-recursive way as follows:
+The functions that follow this pattern, can be defined in a tail-recursive way as
+follows:
 
-\lstinputlisting[firstline=19, lastline=21]{code/GenericBasic.agda}
+\lstinputlisting[firstline=25, lastline=27]{code/GenericBasic.agda}
 
 We can check manually that this function matches the tail-recursive definition in the
 case of the \lstinline{reverse} function:
@@ -433,10 +434,10 @@ case of the \lstinline{reverse} function:
 \end{align*}
 
 Now we can proceed to prove that these two functions are extensionally equal in the
-general case. The proof follows almost same pattern as the one for the \lstinline{length}
+general case. The proof follows the same pattern as the one for the \lstinline{length}
 function:
 
-\lstinputlisting[firstline=43, lastline=50]{code/GenericBasic.agda}
+\lstinputlisting[firstline=49, lastline=56]{code/GenericBasic.agda}
 
 We make use of a piece of syntactic sugar called \emph{sections}, which allows us to
 write the function \lstinline{(λr→f x <> r)} as \lstinline{(f x <>_)}. Apart from that,
@@ -445,18 +446,18 @@ the proof is identical to the ones we have seen before.
 However, to prove the accumulator pulling function, we need to use a different strategy.
 We are required to prove that:
 
-\lstinputlisting[firstline=31, lastline=34]{code/GenericBasic.agda}
+\lstinputlisting[firstline=37, lastline=40]{code/GenericBasic.agda}
 
-We can prove this proposition by induction over the list, which requires us to prove the
-proposition when \lstinline{xs} is \lstinline{[]}:
+To do this, we can prove this proposition by induction over the list, which requires us
+to prove the proposition when \lstinline{xs} is \lstinline{[]}:
 
 \begin{align*}
   \lstinline{r <> reduce-tail [] empty} &= \lstinline{r <> empty} \\
   \lstinline{reduce-tail [] (empty <> r)} &= \lstinline{empty <> r} \\
 \end{align*}
 
-So we are required to prove that \lstinline{r <> empty≡empty <> r}. We could require
-the \lstinline{<>} to be commutative, but we can ``ask for less'' by just requiring
+So we are required to prove that \lstinline{r <> empty≡empty <> r}. We could require the
+\lstinline{<>} function to be commutative, but we can ``ask for less'' by just requiring
 \lstinline{empty} to be a left and right identity for \lstinline{<>}, this is expressed
 in Agda as:
 
@@ -470,9 +471,10 @@ in Agda as:
 \end{center}
 
 This way, we can use those identities to rewrite our goals, and make them match over the
-term \lstinline{r}, and then, using the trivial equality proof \lstinline{refl}:
+term \lstinline{r}, and then, complete the base case using the trivial equality proof
+\lstinline{refl}:
 
-\lstinputlisting[firstline=35, lastline=37]{code/GenericBasic.agda}
+\lstinputlisting[firstline=41, lastline=43]{code/GenericBasic.agda}
 
 The inductive case goal is:
 
@@ -486,6 +488,62 @@ The inductive case goal is:
 Which cannot be proven directly by straightforward induction, as we have seen before, but
 at least we can simplify it by using the left identity property over
 \lstinline{empty <> f x} and then over \lstinline{empty <> r}:
+
+\lstinputlisting[firstline=44, lastline=47]{code/GenericBasic.agda}
+
+Finally, we just need to prove the generalized accumulation pulling function, which has
+the following type signature:
+
+\lstinputlisting[firstline=29, lastline=31]{code/GenericBasic.agda}
+
+Note that the base case is trivial, and it is quite similar to the ones we have already
+proved, so we are going to focus in the inductive case. Following the same kind of
+reductions we have been doing before, we can see that our goal is:
+
+\begin{align*}
+  \lstinline{r <}&\lstinline{> reduce-tail (x∷xs) s} \\
+    &= \lstinline{r <> reduce-tail xs (s <> f x)} \\
+  \lstinline{red}&\lstinline{uce-tail (x∷xs) (s <> r)} \\
+    &= \lstinline{reduce-tail xs ((r <> s) <> f x)} \\
+\end{align*}
+
+Following the generalization strategy, we have to call the function recursively,
+replacing the \lstinline{s} by \lstinline{s <> f x}, which almost gives us what we want,
+except that the right hand side accumulator is associated wrongly.
+
+\begin{center}
+\begin{tabular}{c}
+\begin{lstlisting}
+r <> reduce-tail xs (s <> f x)
+   ≡ reduce-tail xs (r <> (s <> f x))
+\end{lstlisting}
+\end{tabular}
+\end{center}
+
+Associativity is indeed the last property we need the \lstinline{<>} function to satisfy.
+This can be expressed in Agda straightforwardly as:
+
+\begin{center}
+\begin{tabular}{c}
+\begin{lstlisting}
+<>-assoc : ∀ (r s t : R)
+         → (r <> s) <> t ≡ r <> (s <> t)
+\end{lstlisting}
+\end{tabular}
+\end{center}
+
+Which helps us complete the proof:
+
+\lstinputlisting[firstline=32, lastline=35]{code/GenericBasic.agda}
+
+All of these properties match the definition of a monoid. We can complete the
+formalization and encapsulate it in a ready to use parametrized module, using the
+standard library definition of a monoid:
+
+\lstinputlisting[firstline=4, lastline=19]{code/GenericBasic.agda}
+
+\section{Examples}
+
 
 \section{Conclusions}
 

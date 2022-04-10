@@ -1,16 +1,22 @@
 open import Data.List using (List; []; _∷_; _++_; [_])
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; sym; trans; subst)
 
+open import Algebra.Structures using (IsMonoid)
+
 module GenericBasic
-  (A : Set)
-  (R : Set)
+  {A : Set}
+  {R : Set}
+  (f : A → R)
   (empty : R)
   (_<>_ : R → R → R)
-  (<>-identityˡ : ∀ (r : R) → empty <> r ≡ r)
-  (<>-identityʳ : ∀ (r : R) → r <> empty ≡ r)
-  (<>-assoc : ∀ (r s t : R) → (r <> s) <> t ≡ r <> (s <> t))
-  (f : A → R)
+  (m : IsMonoid _≡_ _<>_ empty)
   where
+
+open IsMonoid m using ()
+  renaming ( identityˡ to <>-identityˡ
+           ; identityʳ to <>-identityʳ
+           ; assoc to <>-assoc
+           )
 
 reduce : List A → R
 reduce [] = empty
