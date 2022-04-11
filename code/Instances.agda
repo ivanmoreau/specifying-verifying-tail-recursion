@@ -1,5 +1,9 @@
 module Instances where
 
+-----------------------------------------------
+-- The length function using the Generic module
+-----------------------------------------------
+
 open import Data.Nat using (ℕ; _+_)
 open import Data.Nat.Properties using (+-0-isMonoid)
 open import GenericBasic
@@ -8,6 +12,10 @@ open import GenericBasic
            ; reduce-tail to length-tail
            ; reduce≡reduce-tail to length≡length-tail
            )
+
+-----------------------------------------------
+-- The reverse function using the Generic module
+-----------------------------------------------
 
 open import Algebra.Structures using (IsMonoid)
 open import Function using (flip)
@@ -39,6 +47,10 @@ open import GenericBasic
            ; reduce-tail to reverse-tail
            ; reduce≡reduce-tail to reverse≡reverse-tail
            )
+
+-----------------------------------------------
+-- The indices function using the Generic module
+-----------------------------------------------
 
 open import Data.Nat using (suc)
 open import Data.Nat.Properties using (+-identityʳ; +-assoc)
@@ -86,4 +98,36 @@ map-sum (x ∷ zl) xn yn rewrite +-assoc xn yn x =
           (cong (xl ++_)
             (cong ((map (_+_ xn) yl) ++_)
               (map-sum zl xn yn)))
+
+<>-indices-isMonoid : IsMonoid _≡_ _<>_ empty
+<>-indices-isMonoid = record
+  { isSemigroup = record
+      { isMagma = record
+          { isEquivalence = isEquivalence
+          ; ∙-cong = cong₂ _<>_
+          }
+      ; assoc = <>-assoc
+      }
+  ; identity = <>-identityˡ , <>-identityʳ
+  }
+
+open import Relation.Binary.Definitions using (Decidable)
+open import Relation.Nullary using (yes; no)
+
+module _ {A : Set} (_≟_ : Decidable {A = A} _≡_) (needle : A) where
+  embed : A → IndicesData
+  embed x with x ≟ needle
+  ... | yes _ = 1 , (0 ∷ [])
+  ... | no _  = 1 , []
+
+  open import GenericBasic 
+    {A = A} embed _<>_ empty <>-indices-isMonoid
+
+  -- Get only the snd element from the result
+
+  indices : List A → List ℕ
+  indices xs = proj₂ (reduce xs)
+
+  indices-tail : List A → List ℕ
+  indices-tail xs = proj₂ (reduce-tail xs empty)
 
