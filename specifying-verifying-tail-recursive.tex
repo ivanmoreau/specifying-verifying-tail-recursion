@@ -560,7 +560,7 @@ standard library definition of a monoid:
 
 \lstinputlisting[firstline=4, lastline=19]{code/GenericBasic.agda}
 
-\section{Examples}
+\section{Using the module with the examples}
 
 With the module in place, we can start using it to derive the recursive function, the
 tail-recursive counterpart, and the proof that both functions are extensionally equal.
@@ -587,16 +587,13 @@ The monoid for this function has the following operation and identity element:
 The generated tail recursive function has some caveats. Though it avoids mapping over the
 entire recursive call result, it introduces inefficiency by doing nested concatenations
 to the left, which leads to quadratic complexity. This could be solved by using higher
-order functions as the accumulating monoid \cite{hughes1986novel}, but proving the monoid
-laws will require us to be able to transform extensional equality to intensional
+order functions as the accumulating monoid \cite{hughes1986novel}, but proving these
+monoid laws will require us to be able to transform extensional equality to intensional
 equality, which is not possible in Agda without using \emph{cubical type theory}
-\cite{botta2021extensional,vezzosi2021cubical}, which is out of the scope of this paper.
+\cite{botta2021extensional,vezzosi2021cubical}, but that is out of the scope of this
+paper.
 
 \section{Conclusions}
-
-\subsubsection{Acknowledgements} Please place your acknowledgments at
-the end of the paper, preceded by an unnumbered run-in heading (i.e.
-3rd-level heading).
 
 
 \bibliographystyle{splncs04}
