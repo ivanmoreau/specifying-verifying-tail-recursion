@@ -8,6 +8,10 @@
 \usepackage{colonequals}
 \usepackage{amsmath}
 
+\usepackage{hyperref}
+\usepackage{color}
+\renewcommand\UrlFont{\color{blue}\rmfamily}
+
 \lstset{
   basicstyle=\ttfamily,
   extendedchars=true,
@@ -84,6 +88,9 @@ the focus of this paper, in which dependently typed programming is used to devel
 strategy to prove extensional equality between the original recursive programs and their
 tail-recursive counterparts.
 
+The source code of this paper is available at
+\url{https://github.com/ggzor/specifying-verifying-tail-recursion}.
+
 \section{A simple example: list length}
 
 Let's start with a simple example: a function to compute the length of a list. This
@@ -91,24 +98,22 @@ function can be defined recursively as follows:
 
 \lstinputlisting[firstline=8, lastline=10]{code/Length.agda}
 
-Nonetheless, this function requires space proportional to the length of the list. For
-this reason, this program can be transformed into a tail-recursive function, which can be
-optimized automatically by the compiler to use constant space
+Nonetheless, this function requires space proportional to the length of the list due to
+the recursive calls. This program can be transformed into a tail-recursive function,
+which can be optimized automatically by the compiler to use constant space
 \cite{bauer2003compilation}. The transformed function is shown below:
 
 \lstinputlisting[firstline=12, lastline=14]{code/Length.agda}
 
-In this example, it is clear to see that for any list, both functions return the same
-result, but this is a fact that is not encoded in Agda itself. However, we can encode
-this fact in Agda using dependent function types and intensional equality:
+In this example, it is clear to see that both functions return the same result for every
+possible list we provide as input. This fact can be represented in Agda using dependent
+function types:
 
 \lstinputlisting[firstline=34, lastline=35]{code/Length.agda}
 
-As we can see, the use of dependent types allows us to make reference to the first
-argument in the return type of the function, and therefore, allowing us to state the fact
-that both functions return the same result when called with the same list. The notion of
-``sameness'' used here is the one of \emph{intensional equality}, which is an inductively
-defined family of types \cite{dybjer1994inductive,mu2008algebra} defined as follows:
+The notion of ``sameness'' used here is the one of \emph{intensional equality}, which is
+an inductively defined family of types \cite{dybjer1994inductive,mu2008algebra} defined
+as follows:
 
 \begin{lstlisting}
 data _≡_ {a} {A : Set a} (x : A) : A → Set a where
@@ -117,11 +122,17 @@ data _≡_ {a} {A : Set a} (x : A) : A → Set a where
 
 What this means is that two terms are equal if they are exactly the same term.
 Additionally, in Agda, if both terms reduce to the same term, we can state that they are
-intensionally equal \cite{botta2021extensional}. For example, \lstinline{refl : 2 + 3 ≡
+intensionally equal. For example, \lstinline{refl : 2 + 3 ≡
 5}.
 
-Returning to the example of the list length, we need to implement a function with that
-signature, which we can do by pattern matching on the input list:
+This notion of equality together with the addition of the universal quantifier, lets us
+state state a kind of equality for functions, known as \emph{point-wise equality} or
+\emph{extensional equality} \cite{botta2021extensional}.
+
+To prove extensional equality for the length functions, we can proceed inductively over
+the list, which has the \lstinline{[]} and \lstinline{x∷xs} cases\footnote{The \lstinline{?} symbols
+are holes in our proof, which must be filled later to complete the proof, but are useful
+to write the proof incrementally.}:
 
 \begin{lstlisting}
 length≡length-tail : ∀ (xs : List A)
@@ -130,17 +141,15 @@ length≡length-tail [] = ?
 length≡length-tail (x ∷ xs) = ?
 \end{lstlisting}
 
-We can proceed our proof by filling each of the holes\footnote{The \lstinline{?} symbols
-are holes in our proof, which must be filled later to complete the proof, but are useful
-to write the proof incrementally.}. The first case is trivial, because both function
-calls reduce to to the same term:
+The base case is trivial, because both sides of the equality in the result type reduce to
+to the same term:
 
 \begin{align*}
   \lstinline{length []} &= \lstinline{0} & \text{(by definition)} \\
   \lstinline{length-tail [] 0} &= \lstinline{0} \\
 \end{align*}
 
-Therefore, we can fill the first hole with \lstinline{refl}:
+Therefore, we can fill the first hole in our proof with \lstinline{refl}:
 
 \begin{center}
 \begin{tabular}{c}
@@ -150,10 +159,11 @@ length≡length-tail [] = refl
 \end{tabular}
 \end{center}
 
-For the inductive case, we can reduce both terms instantiated with the argument, and
-check what is necessary to prove. Note that this can be done automatically by querying
-Agda and it's particularly useful when using the Agda mode in Emacs
-\cite{wadler2018programming}. The reductions are shown below:
+For the inductive case, we can reduce both sides of the equality instantiated with the
+argument, and check what is necessary to prove. Note that this can be done automatically
+by querying Agda and it's particularly useful when using the Agda mode in Emacs
+\cite{wadler2018programming}. The reductions are shown below and follow from the
+definition:
 
 \begin{align*}
   \lstinline{length (x∷xs)} &= \lstinline{suc (length xs)} \\
@@ -178,9 +188,13 @@ of the induction hypothesis and what we are proving are almost the same. To make
 match, we can apply the \emph{congruence} property of equality, which has the following
 type:
 
+\begin{center}
+\begin{tabular}{c}
 \begin{lstlisting}
 cong : ∀ (f : A → B) {x y} → x ≡ y → f x ≡ f y
 \end{lstlisting}
+\end{tabular}
+\end{center}
 
 Applying this function to the induction hypothesis, we get the function below:
 
@@ -191,7 +205,7 @@ length≡length-tail (x ∷ xs) =
    in ?
 \end{lstlisting}
 
-The new term \lstinline{suc-cong} has the type:
+The \lstinline{suc-cong} term has the type:
 
 \begin{center}
 \begin{tabular}{c}
@@ -201,8 +215,9 @@ suc (length xs) ≡ suc (length-tail xs 0)
 \end{tabular}
 \end{center}
 
-The proof can be completed by making use of \lstinline{transitivity}, which is
-represented using dependent types as follows:
+As we can see the left sides match, so we can change our goal to prove that the right
+side of \lstinline{suc-cong} is equal to the right side of the goal; by making use of the
+transitive property of equality, which has the following type in Agda:
 
 \begin{center}
 \begin{tabular}{c}
@@ -266,8 +281,8 @@ suc (length-tail xs 1) ≡ length-tail xs 2
 \end{center}
 
 We could try to prove this proposition by straightforward induction too, but that would
-require us to prove the proposition for the next values \lstinline{2} and \lstinline{3},
-and so on, \emph{ad infinitum}.
+require us to prove a similar proposition for the next values \lstinline{2} and
+\lstinline{3}, and so on.
 
 To solve this issue, we can use a \emph{generalization} strategy to prove this inductive
 property \cite{abdali1984generalization}. The generalized property will allows us to
@@ -288,10 +303,10 @@ length-pull-generalized (x ∷ xs) n p = ?
 \end{lstlisting}
 
 The base case is trivial, because replacing the \lstinline{xs} argument with
-\lstinline{[]}, and following a single reduction step on both sides, a common term
+\lstinline{[]}, and following a single reduction step on both sides, the common term
 \lstinline{n + p} is reached.
 
-The inductive case is more interesting, reducing both sides of the equation proceeds as
+The inductive case is more interesting. Reducing both sides of the equation proceeds as
 follows:
 
 \begin{align*}
@@ -310,7 +325,7 @@ length-pull-generalized (x ∷ xs) n p =
 \end{lstlisting}
 
 This takes us closer to the goal we want to prove. Unfortunately, we are left with the
-following type after performing the substitution of \lstinline{p} with \lstinline{suc p}:
+following goal after performing the substitution of \lstinline{p} with \lstinline{suc p}:
 
 \begin{lstlisting}
 n + length-tail xs (suc p) ≡ length-tail xs (n + suc p)
@@ -338,9 +353,8 @@ inductively as follows:
 \end{lstlisting}
 
 The remaining step is to ``replace'' the \lstinline{suc (n + p)} term with
-\lstinline{n + suc p}. This could be done by using a function generalizing over the
-accumulator, but Agda provides the \lstinline{rewrite} construct, that gives us that
-functionality with minimal effort:
+\lstinline{n + suc p}. Agda provides the \lstinline{rewrite} construct to perform this
+transformation:
 
 \lstinputlisting[firstline=26, lastline=28]{code/Length.agda}
 
