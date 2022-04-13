@@ -24,6 +24,7 @@
     {∙}{{ $\cdot$ }}1
     {₂}{{ $\textsubscript{2}$ }}1
     {≟}{{ $\stackrel{?}{=}$ }}1
+    {×}{{ $\times$ }}1
     ,
   inputencoding=utf8,
   captionpos=b,
@@ -143,14 +144,12 @@ length≡length-tail (x ∷ xs) = ?
 
 The base case is trivial, because both sides of the equality in the result type reduce to
 to the same term:
-
 \begin{align*}
   \lstinline{length []} &= \lstinline{0} & \text{(by definition)} \\
-  \lstinline{length-tail [] 0} &= \lstinline{0} \\
+  \lstinline{length-tail [] 0} &= \lstinline{0}
 \end{align*}
 
 Therefore, we can fill the first hole in our proof with \lstinline{refl}:
-
 \begin{center}
 \begin{tabular}{c}
 \begin{lstlisting}
@@ -164,7 +163,6 @@ argument, and check what it is necessary to prove. Note that this can be done
 automatically by querying Agda and it is particularly useful when using the Agda mode in
 Emacs \cite{wadler2018programming}. The reductions are shown below and follow from the
 definition:
-
 \begin{align*}
   \lstinline{length (x∷xs)} &= \lstinline{suc (length xs)} \\
   \lstinline{length-tail (x∷xs) 0} &= \lstinline{length-tail xs (suc 0)} \\
@@ -308,7 +306,6 @@ The base case is trivial, because replacing the \lstinline{xs} argument with
 
 The inductive case is more interesting. Reducing both sides of the equation proceeds as
 follows:
-
 \begin{align*}
   \lstinline{n + length-tail (x∷xs) p} &= \lstinline{n + length-tail xs (suc p)} \\
   \lstinline{length-tail (x∷xs) (n + p)} &= \lstinline{length-tail xs (suc (n + p))}
@@ -575,7 +572,7 @@ The reverse function requires us to create an instance of a flipped monoid for
 \lstinline{++}, which can be done with the already defined properties for list
 concatenation, but flipping them when necessary.
 
-\lstinputlisting[firstline=32, lastline=49]{code/Instances.agda}
+\lstinputlisting[firstline=32, lastline=41]{code/Instances.agda}
 
 Finally, the \lstinline{indices} function also requires us to create a custom monoid. The
 original indices function specialized for natural number lists is the following:
@@ -586,17 +583,28 @@ The monoid for this function has the following operation and identity element:
 
 \lstinputlisting[firstline=67, lastline=75]{code/Instances.agda}
 
-The generated tail recursive function has some caveats. Though it avoids mapping over the
-entire recursive call result, it introduces inefficiency by doing nested concatenations
-to the left, which leads to quadratic complexity. This could be solved by using higher
-order functions as the accumulating monoid \cite{hughes1986novel}, but proving these
-monoid laws will require to be able to transform extensional equality to intensional
-equality, which is not possible in Agda without using \emph{cubical type theory}
-\cite{botta2021extensional,vezzosi2021cubical}, but that is out of the scope of this
-paper.
-
 \section{Conclusions}
 
+A technique to prove extensional equality between a recursive function and its
+tail-recursive counterpart has been presented, along with an Agda module to generate the
+functions and the proof automatically from an arbitrary monoid. The tail-recursive
+function generally improves the time complexity of the original recursive function and
+opens the possibility of performing tail-call optimization by the compiler, leading to a
+more space efficient function execution
+\cite{bauer2003compilation,rubio2017introduction}.
+
+There are some caveats with this technique which are exemplified by the
+\lstinline{indices} function. Even though the generated function avoids mapping over the
+entire recursive call result, it introduces inefficiency by doing nested concatenations
+to the left, which leads to quadratic time complexity. This could be solved by using
+higher order functions as the accumulating monoid \cite{hughes1986novel}, but proving the
+corresponding monoid laws will require to be able to transform extensional equality to
+intensional equality, which is not possible in Agda without using \emph{cubical type
+theory} \cite{botta2021extensional,vezzosi2021cubical}, but that is out of the scope of
+this paper.
+
+Further work can be done in order to generalize this result to arbitrary \emph{recursive
+data types} and \emph{recursion schemes} \cite{meijer1991functional}.
 
 \bibliographystyle{splncs04}
 \bibliography{refs}
