@@ -39,7 +39,7 @@
          Iván Molina Rebolledo\orcidID{0000-0002-2224-7026}
     }
 
-\titlerunning{Verifying tail-recursion in Agda}
+\titlerunning{Transforming recursive functions into tail-recursive functions}
 \authorrunning{A. Suárez et al.}
 
 \institute{ Benemérita Universidad Autónoma de Puebla,\\
@@ -69,7 +69,7 @@ indices functions over lists.
 \section{Introduction}
 
 Dependently typed programming languages provide an expressive system that allows both
-programming and theorem proving. Agda is an implementation of such a language
+programming and theorem proving. Agda is an implementation of such a kind of language
 \cite{bove2009brief}. Using these programming languages, it can be proven that two
 functions return the same output when they receive the same input, which is a property
 known as \emph{extensional equality} \cite{botta2021extensional}.
@@ -93,7 +93,7 @@ The source code of this paper is available at
 
 \section{A simple example: list length}
 
-Let's start with a simple example: a function to compute the length of a list. This
+Let us start with a simple example: a function to compute the length of a list. This
 function can be defined recursively as follows:
 
 \lstinputlisting[firstline=8, lastline=10]{code/Length.agda}
@@ -130,9 +130,9 @@ state state a kind of equality for functions, known as \emph{point-wise equality
 \emph{extensional equality} \cite{botta2021extensional}.
 
 To prove extensional equality for the length functions, we can proceed inductively over
-the list, which has the \lstinline{[]} and \lstinline{x∷xs} cases\footnote{The \lstinline{?} symbols
-are holes in our proof, which must be filled later to complete the proof, but are useful
-to write the proof incrementally.}:
+the list, which has the \lstinline{[]} and \lstinline{x∷xs} cases\footnote{The
+\lstinline{?} symbols are holes, which must be filled later to complete the proof, but
+are useful to write the proof incrementally.}:
 
 \begin{lstlisting}
 length≡length-tail : ∀ (xs : List A)
@@ -160,9 +160,9 @@ length≡length-tail [] = refl
 \end{center}
 
 For the inductive case, we can reduce both sides of the equality instantiated with the
-argument, and check what is necessary to prove. Note that this can be done automatically
-by querying Agda and it's particularly useful when using the Agda mode in Emacs
-\cite{wadler2018programming}. The reductions are shown below and follow from the
+argument, and check what it is necessary to prove. Note that this can be done
+automatically by querying Agda and it is particularly useful when using the Agda mode in
+Emacs \cite{wadler2018programming}. The reductions are shown below and follow from the
 definition:
 
 \begin{align*}
@@ -281,7 +281,7 @@ suc (length-tail xs 1) ≡ length-tail xs 2
 \end{center}
 
 We could try to prove this proposition by straightforward induction too, but that would
-require us to prove a similar proposition for the next values \lstinline{2} and
+require to prove a similar proposition for the next values \lstinline{2} and
 \lstinline{3}, and so on.
 
 To solve this issue, we can use a \emph{generalization} strategy to prove this inductive
@@ -315,9 +315,8 @@ follows:
 \end{align*}
 
 We can see that we have pretty much the induction hypothesis, with the only difference
-being the accumulating parameter \lstinline{p}. Fortunately, as we have generalized the
-proposition, we can pick a value for \lstinline{p} when using the induction
-hypothesis:
+being the accumulating parameter \lstinline{p}. Nevertheless, as we have generalized the
+proposition, we can pick a value for \lstinline{p} when using the induction hypothesis:
 
 \begin{lstlisting}
 length-pull-generalized (x ∷ xs) n p =
@@ -390,7 +389,7 @@ but the structure is identical:
 \begin{itemize}
   \item Start proving by induction on the list.
   \item Fill the base case with \lstinline{refl}.
-  \item Take the induction hypothesis by using a recursive call.
+  \item Take the inductive hypothesis by using a recursive call.
   \item Apply \emph{an operator} to both sides of the equality, using \lstinline{cong}.
   \item Create a function to pull the accumulator, and prove it using a generalized
         version of this function that allows varying the accumulator.
@@ -404,6 +403,9 @@ pattern, we can write this pattern in Agda, which is just an specialization of a
 \lstinline{fold} function \cite{hutton1999tutorial,meijer1991functional}:
 
 \lstinputlisting[firstline=21, lastline=23]{code/GenericBasic.agda}
+
+\noindent
+where
 
 \begin{itemize}
   \item \lstinline{R} is the result type of the function.
@@ -526,8 +528,8 @@ reductions we have been doing before, we can see that our goal is:
 \end{align*}
 
 Following the generalization strategy, we have to call the function recursively,
-replacing the \lstinline{s} by \lstinline{s <> f x}, which almost gives us what we want,
-except that the right hand side accumulator is associated wrongly.
+replacing the \lstinline{s} by \lstinline{s <> f x}, which almost gives what it is
+required, except that the right hand side accumulator is associated wrongly.
 
 \begin{center}
 \begin{tabular}{c}
@@ -538,8 +540,8 @@ r <> reduce-tail xs (s <> f x)
 \end{tabular}
 \end{center}
 
-Associativity is indeed the last property we need the \lstinline{<>} function to satisfy.
-This can be expressed in Agda straightforwardly as:
+Associativity is indeed the last property that the \lstinline{<>} function needs to
+satisfy. This can be expressed in Agda straightforwardly as:
 
 \begin{center}
 \begin{tabular}{c}
@@ -588,7 +590,7 @@ The generated tail recursive function has some caveats. Though it avoids mapping
 entire recursive call result, it introduces inefficiency by doing nested concatenations
 to the left, which leads to quadratic complexity. This could be solved by using higher
 order functions as the accumulating monoid \cite{hughes1986novel}, but proving these
-monoid laws will require us to be able to transform extensional equality to intensional
+monoid laws will require to be able to transform extensional equality to intensional
 equality, which is not possible in Agda without using \emph{cubical type theory}
 \cite{botta2021extensional,vezzosi2021cubical}, but that is out of the scope of this
 paper.
