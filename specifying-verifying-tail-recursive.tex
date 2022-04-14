@@ -7,7 +7,7 @@
 \usepackage{lmodern}
 \usepackage{colonequals}
 \usepackage{amsmath}
-
+\usepackage[english]{babel}
 \usepackage{hyperref}
 \usepackage{color}
 \renewcommand\UrlFont{\color{blue}\rmfamily}
@@ -85,7 +85,7 @@ the original program is usually done by using \emph{algebraic reasoning}
 
 The \emph{accumulation} strategy is a well-known program transformation technique to
 improve the efficiency of recursive functions \cite{bird1984promotion}. This technique is
-the focus of this paper, in which dependently typed programming is used to develop an
+the focus of this paper, in which dependently typed programming is used to develop a
 strategy to prove extensional equality between the original recursive programs and their
 tail-recursive counterparts.
 
@@ -113,21 +113,20 @@ function types:
 \lstinputlisting[firstline=34, lastline=35]{code/Length.agda}
 
 The notion of ``sameness'' used here is the one of \emph{intensional equality}, which is
-an inductively defined family of types \cite{dybjer1994inductive,mu2008algebra} defined
-as follows:
+an inductively defined family of types \cite{dybjer1994inductive,mu2008algebra} with the
+following definition:
 
 \begin{lstlisting}
 data _≡_ {a} {A : Set a} (x : A) : A → Set a where
   instance refl : x ≡ x
 \end{lstlisting}
 
-What this means is that two terms are equal if they are exactly the same term.
-Additionally, in Agda, if both terms reduce to the same term, we can state that they are
-intensionally equal. For example, \lstinline{refl : 2 + 3 ≡
-5}.
+This means that two terms are equal if they are exactly the same term. Additionally, in
+Agda, if both terms reduce to the same term, we can state that they are intensionally
+equal. For example, \lstinline{refl : 2 + 3 ≡ 5}.
 
-This notion of equality together with the addition of the universal quantifier, lets us
-state state a kind of equality for functions, known as \emph{point-wise equality} or
+This notion of equality together with the addition of the universal quantifier, allows us
+to state a kind of equality for functions, known as \emph{point-wise equality} or
 \emph{extensional equality} \cite{botta2021extensional}.
 
 To prove extensional equality for the length functions, we can proceed inductively over
@@ -143,7 +142,7 @@ length≡length-tail (x ∷ xs) = ?
 \end{lstlisting}
 
 The base case is trivial, because both sides of the equality in the result type reduce to
-to the same term:
+the same term:
 \begin{align*}
   \lstinline{length []} &= \lstinline{0} & \text{(by definition)} \\
   \lstinline{length-tail [] 0} &= \lstinline{0}
@@ -159,9 +158,9 @@ length≡length-tail [] = refl
 \end{center}
 
 For the inductive case, we can reduce both sides of the equality instantiated with the
-argument, and check what it is necessary to prove. Note that this can be done
-automatically by querying Agda and it is particularly useful when using the Agda mode in
-Emacs \cite{wadler2018programming}. The reductions are shown below and follow from the
+argument, and check what is necessary to prove. Note that this can be done automatically
+by querying Agda, and it is particularly useful when using the Agda mode in Emacs
+\cite{wadler2018programming}. The reductions are shown below and follow from the
 definition:
 \begin{align*}
   \lstinline{length (x∷xs)} &= \lstinline{suc (length xs)} \\
@@ -283,7 +282,7 @@ require to prove a similar proposition for the next values \lstinline{2} and
 \lstinline{3}, and so on.
 
 To solve this issue, we can use a \emph{generalization} strategy to prove this inductive
-property \cite{abdali1984generalization}. The generalized property will allows us to
+property \cite{abdali1984generalization}. The generalized property will allow us to
 vary the value of the accumulator in the different cases of the inductive proof, but we
 will need to introduce another variable for it. It is important to note that after
 processing the first \lstinline{n} items of the list, we will get
@@ -327,7 +326,7 @@ following goal after performing the substitution of \lstinline{p} with \lstinlin
 n + length-tail xs (suc p) ≡ length-tail xs (n + suc p)
 \end{lstlisting}
 
-This is almost what we want, with the exception of \lstinline{suc (n + p)} not being
+This is almost what we want, except for \lstinline{suc (n + p)} not being
 equal to \lstinline{n + suc p}. However, these two terms are indeed equal, but not
 definitionally, because the plus function is defined by induction on the first argument,
 and not on the second one:
@@ -396,7 +395,7 @@ but the structure is identical:
 \section{Generalization}
 
 Starting from the function definitions, we can see that they follow the same recursive
-pattern, we can write this pattern in Agda, which is just an specialization of a
+pattern, we can write this pattern in Agda, which is just a specialization of a
 \lstinline{fold} function \cite{hutton1999tutorial,meijer1991functional}:
 
 \lstinputlisting[firstline=21, lastline=23]{code/GenericBasic.agda}
@@ -514,7 +513,7 @@ the following type signature:
 \lstinputlisting[firstline=29, lastline=31]{code/GenericBasic.agda}
 
 Note that the base case is trivial, and it is quite similar to the ones we have already
-proved, so we are going to focus in the inductive case. Following the same kind of
+proved, so we are going to focus on the inductive case. Following the same kind of
 reductions we have been doing before, we can see that our goal is:
 
 \begin{align*}
@@ -575,7 +574,7 @@ concatenation, but flipping them when necessary.
 \lstinputlisting[firstline=32, lastline=41]{code/Instances.agda}
 
 Finally, the \lstinline{indices} function also requires us to create a custom monoid. The
-original indices function specialized for natural number lists is the following:
+original indices function specialized for lists of natural number is the following:
 
 \lstinputlisting[firstline=7, lastline=11]{code/Indices.agda}
 
