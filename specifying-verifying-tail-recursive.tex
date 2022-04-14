@@ -71,7 +71,7 @@ indices functions over lists.
 
 Dependently typed programming languages provide an expressive system that allows both
 programming and theorem proving. Agda is an implementation of such a kind of language
-\cite{bove2009brief}. Using these programming languages, it can be proven that two
+\cite{bove2009brief}. Using these programming languages, it can be proved that two
 functions return the same output when they receive the same input, which is a property
 known as \emph{extensional equality} \cite{botta2021extensional}.
 
@@ -501,7 +501,7 @@ The inductive case goal is:
     &= \lstinline{reduce-tail xs ((empty <> r) <> f x)} \\
 \end{align*}
 
-Which cannot be proven directly by straightforward induction, as we have seen before, but
+Which cannot be proved directly by straightforward induction, as we have seen before, but
 at least we can simplify it by using the left identity property over
 \lstinline{empty <> f x} and then over \lstinline{empty <> r}:
 
