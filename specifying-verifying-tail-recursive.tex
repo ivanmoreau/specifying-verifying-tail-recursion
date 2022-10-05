@@ -1,16 +1,42 @@
 % vim: set tw=89 spell :
-\documentclass[runningheads]{llncs}
+\documentclass{cys}
 
-\usepackage[T1]{fontenc}
+%\usepackage[T1]{fontenc}
+\usepackage{fontspec}
+
 \usepackage{listings}
 \usepackage{graphicx}
-\usepackage{lmodern}
+%\usepackage{lmodern}
 \usepackage{colonequals}
 \usepackage{amsmath}
 \usepackage[english]{babel}
 \usepackage{hyperref}
 \usepackage{color}
+\usepackage[scaled=0.85]{beramono}
 \renewcommand\UrlFont{\color{blue}\rmfamily}
+
+\usepackage{unicode-math}
+
+% Use stix2 fonts for math
+\setmathfont{STIXTwoMath-Regular.otf}
+\setmonofont{STIXTwoMath-Regular.otf}
+
+
+% From https://tex.stackexchange.com/questions/127010/how-can-i-make-lstinline-function-normally-inside-math-mode
+\usepackage{letltxmacro}
+\newcommand*{\SavedLstInline}{}
+\LetLtxMacro\SavedLstInline\lstinline
+\DeclareRobustCommand*{\lstinline}{%
+  \ifmmode
+    \let\SavedBGroup\bgroup
+    \def\bgroup{%
+      \let\bgroup\SavedBGroup
+      \hbox\bgroup
+    }%
+  \fi
+  \SavedLstInline
+  }
+
 
 \lstset{
   basicstyle=\ttfamily,
@@ -35,16 +61,22 @@
 \title{Specifying and Verifying a Transformation of Recursive Functions into
        Tail-Recursive Functions}
 
-\author{ Axel Suárez Polo\orcidID{0000-0002-8233-3751} \and \\
-         José de Jesús Lavalle Martínez\orcidID{0000-0001-8652-3889} \and \\
-         Iván Molina Rebolledo\orcidID{0000-0002-2224-7026}
-    }
+\author{Axel Suárez Polo$^1$, José de Jesús Lavalle Martínez$^1$, Iván Molina Rebolledo$^1$}
 
-\titlerunning{Transforming recursive functions into tail-recursive functions}
-\authorrunning{A. Suárez et al.}
+\affil{
+$^1$ Benemérita Universidad Autónoma de Puebla, Puebla, \authorcr
+Mexico
+\authorcr \authorcr
+author1@xxx.xx, author2@xxx.xx
+\authorcr  \authorcr
+}
 
-\institute{ Benemérita Universidad Autónoma de Puebla,\\
-  Puebla, Puebla 72000, México}
+
+%\titlerunning{Transforming recursive functions into tail-recursive functions}
+%\authorrunning{A. Suárez et al.}
+
+%\institute{ Benemérita Universidad Autónoma de Puebla,\\
+%  Puebla, Puebla 72000, México}
 
 \maketitle
 
@@ -58,16 +90,15 @@ prove extensional equality of both functions. In order to achieve this goal, the
 programming language and proof assistant is used to generate a parametrized module with a
 monoid, via dependent types. This technique is exemplified with the length, reverse, and
 indices functions over lists.
-
-\keywords{    Dependent Types
-         \and Formal Specification and Verification
-         \and Tail Recursion
-         \and Accumulation
-         \and Program Transformation
-         }
 \end{abstract}
 
+\begin{keywords}
+Dependent Types, Formal Specification and Verification, Tail Recursion, Accumulation,
+Program Transformation
+\end{keywords}
+
 \section{Introduction}
+\label{sec:introduction}
 
 Dependently typed programming languages provide an expressive system that allows both
 programming and theorem proving. Agda is an implementation of such a kind of language
@@ -412,7 +443,7 @@ where
         result.
 \end{itemize}
 
-In the case of the \lstinline{length} function, the result type is \mathbb{N}, the
+In the case of the \lstinline{length} function, the result type is $\mathbb{N}$, the
 natural numbers; \lstinline{empty} is \lstinline{0}; the function to transform each
 element is a constant function that ignores its argument and returns \lstinline{1}; and
 the function to combine the current item and the result of the recursive call is the
@@ -605,7 +636,19 @@ this paper.
 Further work can be done in order to generalize this result to arbitrary \emph{recursive
 data types} and \emph{recursion schemes} \cite{meijer1991functional}.
 
-\bibliographystyle{splncs04}
+%\bibliographystyle{splncs04}
+%\bibliography{refs}
+%\end{thebibliography}
+
+% OBLIGATORY: use BIBTEX formatting!
+\small{
+\bibliographystyle{cys}
 \bibliography{refs}
-\end{thebibliography}
+}
+\normalsize
+
+
+\begin{biography}[]{} % Leave this section empty
+\end{biography}
+
 \end{document}
