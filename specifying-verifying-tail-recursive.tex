@@ -4,7 +4,6 @@
 %\usepackage[T1]{fontenc}
 \usepackage{fontspec}
 
-\usepackage{listings}
 \usepackage{graphicx}
 %\usepackage{lmodern}
 \usepackage{colonequals}
@@ -14,70 +13,22 @@
 \usepackage{color}
 \usepackage[scaled=0.85]{beramono}
 \renewcommand\UrlFont{\color{blue}\rmfamily}
-
 \usepackage{unicode-math}
-
 \usepackage{verbatim}
 \usepackage{fancyvrb}
 \usepackage{fvextra}
-
 \usepackage{microtype}
 
-% Use stix2 fonts for math
-%\setmathfont{STIXTwoMath-Regular.otf}
-%\setmonofont{STIXTwoMath-Regular.otf}
+% Temporal font
 \setmonofont{Fira Code}
 
-\makeatletter
-\newcommand{\verbatimfont}[1]{\renewcommand{\verbatim@font}{\ttfamily#1}}
-\makeatother
-\makeatletter
-\g@addto@macro\verbatim@font{\lsstyle}
-\makeatother
-
-
-% From https://tex.stackexchange.com/questions/127010/how-can-i-make-lstinline-function-normally-inside-math-mode
-\usepackage{letltxmacro}
-\newcommand*{\SavedLstInline}{}
-\LetLtxMacro\SavedLstInline\lstinline
-\DeclareRobustCommand*{\lstinline}{%
-  \ifmmode
-    \let\SavedBGroup\bgroup
-    \def\bgroup{%
-      \let\bgroup\SavedBGroup
-      \hbox\bgroup
-    }%
-  \fi
-  \SavedLstInline
-  }
-
-
-\lstset{
-  basicstyle=\ttfamily,
-  extendedchars=true,
-  literate=
-    {∷}{{ $\coloncolon$ }}1 {→}{{ $\rightarrow$ }}1
-    {ℕ}{{ $\mathbb{N}$ }}1 {≡}{{ $\equiv$ }}1
-    {∀}{{ $\forall$ }}1 {λ}{{$\lambda$}}1
-    {ˡ}{{ $\textsuperscript{l}$ }}1
-    {ʳ}{{ $\textsuperscript{r}$ }}1
-    {∙}{{ $\cdot$ }}1
-    {₂}{{ $\textsubscript{2}$ }}1
-    {≟}{{ $\stackrel{?}{=}$ }}1
-    {×}{{ $\times$ }}1
-    ,
-  inputencoding=utf8,
-  captionpos=b,
-}
-
-% Break lines in verbatim environments
 \fvset{
   breaklines=true,
   breakindent=2em,
 }
 
+% Inline code for math environments
 \newcommand{\MVerb}[1]{\hbox{\Verb{#1}}}
-
 
 \begin{document}
 
@@ -150,7 +101,6 @@ The source code of this paper is available at
 Let us start with a simple example: a function to compute the length of a list. This
 function can be defined recursively as follows:
 
-%\lstinputlisting[firstline=8, lastline=10]{code/Length.agda}
 \VerbatimInput[firstline=8, lastline=10]{code/Length.agda}
 
 Nonetheless, this function requires space proportional to the length of the list due to
@@ -158,24 +108,18 @@ the recursive calls. This program can be transformed into a tail-recursive funct
 which can be optimized automatically by the compiler to use constant space
 \cite{bauer2003compilation}. The transformed function is shown below:
 
-%\lstinputlisting[firstline=12, lastline=14]{code/Length.agda}
 \VerbatimInput[firstline=12, lastline=14]{code/Length.agda}
 
 In this example, it is clear to see that both functions return the same result for every
 possible list we provide as input. This fact can be represented in Agda using dependent
 function types:
 
-%\lstinputlisting[firstline=34, lastline=35]{code/Length.agda}
 \VerbatimInput[firstline=34, lastline=35]{code/Length.agda}
 
 The notion of ``sameness'' used here is the one of \emph{intensional equality}, which is
 an inductively defined family of types \cite{dybjer1994inductive,mu2008algebra} with the
 following definition:
 
-%\begin{lstlisting}
-%data _≡_ {a} {A : Set a} (x : A) : A → Set a where
-%  instance refl : x ≡ x
-%\end{lstlisting}
 \begin{Verbatim}
 data _≡_ {a} {A : Set a} (x : A) : A → Set a where
   instance refl : x ≡ x
@@ -194,19 +138,12 @@ the list, which has the \Verb{[]} and \Verb{x∷xs} cases\footnote{The
 \Verb{?} symbols are holes, which must be filled later to complete the proof, but
 are useful to write the proof incrementally.}:
 
-%\begin{lstlisting}
-%length≡length-tail : ∀ (xs : List A)
-%                   → length xs ≡ length-tail xs 0
-%length≡length-tail [] = ?
-%length≡length-tail (x ∷ xs) = ?
-%\end{lstlisting}
 \begin{Verbatim}
 length≡length-tail : ∀ (xs : List A)
                    → length xs ≡ length-tail xs 0
 length≡length-tail [] = ?
 length≡length-tail (x ∷ xs) = ?
 \end{Verbatim}
-
 
 The base case is trivial, because both sides of the equality in the result type reduce to
 the same term:
@@ -217,11 +154,9 @@ the same term:
 
 Therefore, we can fill the first hole in our proof with \Verb{refl}:
 \begin{center}
-%\begin{tabular}{c}
 \begin{Verbatim}
 length≡length-tail [] = refl
 \end{Verbatim}
-%\end{tabular}
 \end{center}
 
 For the inductive case, we can reduce both sides of the equality instantiated with the
@@ -253,11 +188,9 @@ match, we can apply the \emph{congruence} property of equality, which has the fo
 type:
 
 \begin{center}
-%\begin{tabular}{c}
 \begin{Verbatim}
 cong : ∀ (f : A → B) {x y} → x ≡ y → f x ≡ f y
 \end{Verbatim}
-%\end{tabular}
 \end{center}
 
 Applying this function to the induction hypothesis, we get the function below:
@@ -272,11 +205,9 @@ length≡length-tail (x ∷ xs) =
 The \Verb{suc-cong} term has the type:
 
 \begin{center}
-%\begin{tabular}{c}
 \begin{Verbatim}
 suc (length xs) ≡ suc (length-tail xs 0)
 \end{Verbatim}
-%\end{tabular}
 \end{center}
 
 As we can see the left sides match, so we can change our goal to prove that the right
@@ -284,11 +215,9 @@ side of \Verb{suc-cong} is equal to the right side of the goal; by making use of
 transitive property of equality, which has the following type in Agda:
 
 \begin{center}
-%\begin{tabular}{c}
 \begin{Verbatim}
 trans : ∀ {x y z} → x ≡ y → y ≡ z → x ≡ z
 \end{Verbatim}
-%\end{tabular}
 \end{center}
 
 Therefore, now our proof is:
@@ -303,11 +232,9 @@ length≡length-tail (x ∷ xs) =
 The type of the term required to fill the hole is:
 
 \begin{center}
-%\begin{tabular}{c}
 \begin{Verbatim}
 suc (length-tail xs 0) ≡ length-tail xs 1
 \end{Verbatim}
-%\end{tabular}
 \end{center}
 
 We need to ``pull'' the \Verb{1} from the accumulator somehow, and convert it to a
@@ -337,11 +264,9 @@ So, we are left with the following goal, which is very similar to the one we sta
 with:
 
 \begin{center}
-%\begin{tabular}{c}
 \begin{Verbatim}
 suc (length-tail xs 1) ≡ length-tail xs 2
 \end{Verbatim}
-%\end{tabular}
 \end{center}
 
 We could try to prove this proposition by straightforward induction too, but that would
@@ -424,11 +349,9 @@ We make use of the \emph{symmetric} property of equality in the rewriting step, 
 allows us to flip the sides of the equality:
 
 \begin{center}
-%\begin{tabular}{c}
 \begin{Verbatim}
 sym : ∀ {x y} → x ≡ y → y ≡ x
 \end{Verbatim}
-%\end{tabular}
 \end{center}
 
 With all this in place, we can finally prove the remaining goals, giving as a result the
@@ -545,12 +468,10 @@ So we are required to prove that \Verb{r <> empty≡empty <> r}. We could requir
 in Agda as:
 
 \begin{center}
-%\begin{tabular}{c}
 \begin{Verbatim}
 <>-identityˡ : ∀ (r : R) → empty <> r ≡ r
 <>-identityʳ : ∀ (r : R) → r <> empty ≡ r
 \end{Verbatim}
-%\end{tabular}
 \end{center}
 
 This way, we can use those identities to rewrite our goals, and make them match over the
@@ -595,24 +516,20 @@ replacing the \Verb{s} by \Verb{s <> f x}, which almost gives what it is
 required, except that the right hand side accumulator is associated wrongly.
 
 \begin{center}
-%\begin{tabular}{c}
 \begin{Verbatim}
 r <> reduce-tail xs (s <> f x)
    ≡ reduce-tail xs (r <> (s <> f x))
 \end{Verbatim}
-%\end{tabular}
 \end{center}
 
 Associativity is indeed the last property that the \Verb{<>} function needs to
 satisfy. This can be expressed in Agda straightforwardly as:
 
 \begin{center}
-%\begin{tabular}{c}
 \begin{Verbatim}
 <>-assoc : ∀ (r s t : R)
          → (r <> s) <> t ≡ r <> (s <> t)
 \end{Verbatim}
-%\end{tabular}
 \end{center}
 
 Which helps us complete the proof:
@@ -672,17 +589,12 @@ this paper.
 Further work can be done in order to generalize this result to arbitrary \emph{recursive
 data types} and \emph{recursion schemes} \cite{meijer1991functional}.
 
-%\bibliographystyle{splncs04}
-%\bibliography{refs}
-%\end{thebibliography}
-
 % OBLIGATORY: use BIBTEX formatting!
 \small{
 \bibliographystyle{cys}
 \bibliography{refs}
 }
 \normalsize
-
 
 \begin{biography}[]{} % Leave this section empty
 \end{biography}
